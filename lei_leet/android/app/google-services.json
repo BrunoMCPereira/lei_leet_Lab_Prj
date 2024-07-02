@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "103978736224",
+    "project_id": "aut-resid-lei-leet",
+    "storage_bucket": "aut-resid-lei-leet.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103978736224:android:024e5866be157a11f74105",
+        "android_client_info": {
+          "package_name": "Automacao.Residencial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgwKTzLLqP7w6wTnwfa8rfF4YQMouXUGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103978736224:android:1cfcb5915a28b886f74105",
+        "android_client_info": {
+          "package_name": "com.example.a_r_lei_leet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgwKTzLLqP7w6wTnwfa8rfF4YQMouXUGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

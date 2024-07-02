@@ -1,0 +1,31 @@
+name: lei_leet
+description: Um novo projeto Flutter.
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+  mqtt_client: ^10.2.1
+  flutter_local_notifications: ^17.1.2
+  shared_preferences: ^2.2.3
+  provider: ^6.1.2
+  flutter_lints: ^4.0.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/home_automation_leileet.png # Adicione aqui seus assets
