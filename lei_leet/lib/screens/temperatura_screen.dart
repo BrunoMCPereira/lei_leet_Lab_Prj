@@ -41,59 +41,58 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
   void _carregarDados() {
     setState(() {
       temperaturaAtual = widget.communicationHelper.deviceState.temperaturaAtual?.toString() ?? '24.0';
-      temperaturaPretendida = widget.communicationHelper.arCondicionadoTemperaturaDefinida?.toString() ?? '24.0';
+      temperaturaPretendida = widget.communicationHelper.deviceState.estadoArCondicionado == "ligado"
+          ? widget.communicationHelper.deviceState.temperaturaAtual?.toString() ?? '24.0'
+          : 'inativo';
       temperaturaPretendidaParametrizacao = widget.communicationHelper.arCondicionadotemperaturaPretendidaParametrizacao?.toString() ?? '24.0';
       isEditingParametrizacao = widget.communicationHelper.arCondicionadoParametrizacaoAtiva;
     });
     developer.log('Dados iniciais carregados', name: 'TemperatureScreen');
+    developer.log('temperaturaAtual: $temperaturaAtual', name: 'TemperatureScreen');
+    developer.log('temperaturaPretendida: $temperaturaPretendida', name: 'TemperatureScreen');
+    developer.log('temperaturaPretendidaParametrizacao: $temperaturaPretendidaParametrizacao', name: 'TemperatureScreen');
+    developer.log('isEditingParametrizacao: $isEditingParametrizacao', name: 'TemperatureScreen');
   }
 
   void _alterarTemperatura(double novaTemperatura) {
     setState(() {
       temperaturaPretendida = novaTemperatura.toStringAsFixed(1);
     });
+    developer.log('temperaturaPretendida alterada para: $temperaturaPretendida', name: 'TemperatureScreen');
   }
 
   void _alterarTemperaturaParametrizacao(double novaTemperatura) {
     setState(() {
       temperaturaPretendidaParametrizacao = novaTemperatura.toStringAsFixed(1);
     });
+    developer.log('temperaturaPretendidaParametrizacao alterada para: $temperaturaPretendidaParametrizacao', name: 'TemperatureScreen');
   }
 
-  void _definirTemperatura() {
+ void _definirTemperatura() {
     setState(() {
       if (double.parse(temperaturaPretendida!) < double.parse(temperaturaAtual!)) {
         widget.communicationHelper.ligarArCondicionado();
         widget.communicationHelper.desligarLuz();
+        developer.log('Ar condicionado ligado e luz desligada', name: 'TemperatureScreen');
       } else {
         widget.communicationHelper.ligarLuz();
         widget.communicationHelper.desligarArCondicionado();
+        developer.log('Luz ligada e ar condicionado desligado', name: 'TemperatureScreen');
       }
 
       widget.communicationHelper.arCondicionadoParametrizacaoAtiva = true;
       isDefinindoTemperatura = false;
     });
 
-    final parametros = {
-      "estado": "ativo",
-      "modelo": "habilitar",
-      "dias_semana": widget.communicationHelper.diasSelecionadosArCondicionado,
-      "horario": {
-        "ligar": widget.communicationHelper.arCondicionadoHoraLigar != null
-            ? '${widget.communicationHelper.arCondicionadoHoraLigar!.hour.toString().padLeft(2, '0')}:${widget.communicationHelper.arCondicionadoHoraLigar!.minute.toString().padLeft(2, '0')}'
-            : null,
-        "desligar": widget.communicationHelper.arCondicionadoHoraDesligar != null
-            ? '${widget.communicationHelper.arCondicionadoHoraDesligar!.hour.toString().padLeft(2, '0')}:${widget.communicationHelper.arCondicionadoHoraDesligar!.minute.toString().padLeft(2, '0')}'
-            : null,
-      },
-      "temperatura": temperaturaPretendidaParametrizacao, // Use temperaturaPretendidaParametrizacao aqui
+    final valoresAtuais = {
+      "estado": double.parse(temperaturaPretendida!) < double.parse(temperaturaAtual!) ? "ligar" : "desligar",
+      "temperatura_pretendida": temperaturaPretendida
     };
-    widget.communicationHelper.programarParametros("ar_condicionado", parametros);
+    widget.communicationHelper.definirValoresAtuais("ar_condicionado", valoresAtuais);
 
-    setState(() {
-      widget.communicationHelper.arCondicionadotemperaturaPretendidaParametrizacao = double.parse(temperaturaPretendidaParametrizacao!);
-    });
+    developer.log('Valores atuais definidos: $valoresAtuais', name: 'TemperatureScreen');
   }
+
 
   void _desligar() {
     widget.communicationHelper.desligarArCondicionado();
@@ -102,18 +101,6 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
       widget.communicationHelper.arCondicionadoParametrizacaoAtiva = false;
       isDefinindoTemperatura = false;
     });
-
-    final parametros = {
-      "estado": "inativo",
-      "modelo": "desabilitar",
-      "dias_semana": [],
-      "horario": {
-        "ligar": "inativo",
-        "desligar": "inativo",
-      },
-      "temperatura": "inativo",
-    };
-    widget.communicationHelper.programarParametros("ar_condicionado", parametros);
   }
 
   Future<void> _selecionarHoraLigar(BuildContext context) async {
@@ -125,6 +112,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
       setState(() {
         widget.communicationHelper.arCondicionadoHoraLigar = picked;
       });
+      developer.log('Hora de ligar selecionada: ${widget.communicationHelper.arCondicionadoHoraLigar}', name: 'TemperatureScreen');
     }
   }
 
@@ -137,6 +125,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
       setState(() {
         widget.communicationHelper.arCondicionadoHoraDesligar = picked;
       });
+      developer.log('Hora de desligar selecionada: ${widget.communicationHelper.arCondicionadoHoraDesligar}', name: 'TemperatureScreen');
     }
   }
 
@@ -148,6 +137,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
         widget.communicationHelper.diasSelecionadosArCondicionado.add(dia);
       }
     });
+    developer.log('Dias selecionados: ${widget.communicationHelper.diasSelecionadosArCondicionado}', name: 'TemperatureScreen');
   }
 
   Future<void> _atualizarParametrizacao() async {
@@ -195,6 +185,8 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     setState(() {
       isEditingParametrizacao = false;
     }); // Garantir que a UI seja atualizada
+
+    developer.log('Parametrização atualizada: $parametros', name: 'TemperatureScreen');
   }
 
   Future<void> _cancelarParametrizacao() async {
@@ -217,6 +209,8 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
     };
     widget.communicationHelper.programarParametros("ar_condicionado", parametros);
     _carregarDados(); // Atualiza os dados após o cancelamento de parametrização
+
+    developer.log('Parametrização cancelada: $parametros', name: 'TemperatureScreen');
   }
 
   @override
@@ -304,7 +298,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                 ),
                 ElevatedButton(
                   onPressed: _atualizarParametrizacao,
-                  child: Text('Gravar Agendamento'),
+                  child: Text('Gravar Agendamento',style: TextStyle(color: Colors.white, fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -313,7 +307,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _cancelarParametrizacao,
-                  child: Text('Cancelar Agendamento'),
+                  child: Text('Cancelar Agendamento',style: TextStyle(color: Colors.white, fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -339,7 +333,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                     style: TextStyle(fontSize: 18, color: Colors.blue),
                   ),
                   Slider(
-                    value: double.tryParse(temperaturaPretendida ?? temperaturaAtual!) ?? 24.0,
+                    value: (temperaturaPretendida != null ? double.tryParse(temperaturaPretendida!) : double.tryParse(temperaturaAtual!)) ?? 24.0,
                     min: 16,
                     max: 30,
                     divisions: 28,
@@ -348,6 +342,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       _alterarTemperatura(value);
                     },
                   ),
+
                 ],
                 SizedBox(height: 16),
                 ControlSection(
@@ -362,6 +357,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       setState(() {
                         isDefinindoTemperatura = true;
                       });
+                      developer.log('Definindo temperatura...', name: 'TemperatureScreen');
                     }
                   },
                   buttonColor: widget.communicationHelper.arCondicionadoParametrizacaoAtiva
@@ -382,6 +378,7 @@ class _TemperatureScreenState extends State<TemperatureScreen> {
                       isEditingParametrizacao = true;
                       widget.communicationHelper.solicitarParametrizacao('ar_condicionado'); // Adicionei essa linha para carregar os dados ao clicar em "Verificar Agendamento"
                     });
+                    developer.log('Editando parametrização...', name: 'TemperatureScreen');
                   },
                   child: Text(
                     widget.communicationHelper.arCondicionadoParametrizacaoAtiva ? 'Verificar Agendamento' : 'Adicionar Agendamento',

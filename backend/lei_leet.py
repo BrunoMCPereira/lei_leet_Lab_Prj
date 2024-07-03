@@ -61,7 +61,11 @@ class BD_:
     def armazenar_dados(self, colecao, documento, dados):
         try:
             doc_ref = self.db.collection(colecao).document(documento)
-            doc_ref.set(dados, merge=True)
+            if "ar_condicionado" in dados and dados["ar_condicionado"] == "desligado" and "temperatura_pretendida" in dados:
+                # Atualiza apenas a temperatura pretendida sem ligar o ar condicionado
+                doc_ref.update({"temperatura_pretendida": dados["temperatura_pretendida"]})
+            else:
+                doc_ref.set(dados, merge=True)
         except Exception as e:
             print(f"Erro ao armazenar dados: {e}")
 
@@ -252,9 +256,16 @@ class Inf_t_:
                     self.tratar_estores({"estado": comando}, "app")
                     print(f"[LOG] Ordem recebida da app para estores: {comando}")
                 elif dispositivo == "ar_condicionado":
-                    self.tratar_ar_condicionado({"estado": comando}, "app")
-                    estado = "ligado" if comando == "ligar" else "desligado"
-                    self.notificar_estado("ar_condicionado", estado)
+                    comando = dados["parametros"][dispositivo]
+                    print(f"Comando no processar mensagem: {comando}")
+                    
+                    estado = comando if isinstance(comando, str) else comando.get("estado")
+                    print(f"Estado no processar mensagem: {estado}")
+                    
+                    temperatura_pretendida = comando.get("temperatura_pretendida") if isinstance(comando, dict) else None
+                    print(f"temperatura_pretendida no processar mensagem: {temperatura_pretendida}")
+                    
+                    self.tratar_ar_condicionado({"estado": estado, "temperatura_pretendida": temperatura_pretendida}, "app")
             elif dados.get("instrucao") == "Programar":
                 self.tratar_parametros(dados)
             elif dados.get("instrucao") == "SolicitarParametrizacao":
@@ -473,22 +484,47 @@ class Inf_t_:
 
     def tratar_ar_condicionado(self, dados, origem):
         estado = dados.get('estado')
-        comando = {"ar_condicionado": "ligar" if estado == "ligar" else "desligar"}
-        estado_armazenar = "ligado" if estado == "ligar" else "desligado"
-
-        # Armazenar o estado do ar condicionado no banco de dados como 'ligado' ou 'desligado'
-        self.bd_.armazenar_dados("ar_condicionado", "estado", {"ar_condicionado": estado_armazenar})
+        print(f"Estado no tratar ar_condicionado", estado)
+        temperatura_pretendida = dados.get('temperatura_pretendida')
+        print(f"temperatura pretendida no tratar ar_condicionado", temperatura_pretendida)
+        
+        if temperatura_pretendida is not None:
+            # Armazena a temperatura pretendida independentemente do estado do ar condicionado
+            self.bd_.armazenar_dados("ar_condicionado", "estado", {
+                "temperatura_pretendida": temperatura_pretendida
+            })
+        
+        if estado == "ligar":
+            comando = {"ar_condicionado": "ligar"}
+            estado_armazenar = "ligado"
+            self.bd_.armazenar_dados("ar_condicionado", "estado", {
+                "ar_condicionado": estado_armazenar,
+                "temperatura_pretendida": temperatura_pretendida
+            })
+            self.preparar_comando("ar_condicionado", comando)
+        elif estado == "desligar":
+            comando = {"ar_condicionado": "desligar"}
+            estado_armazenar = "desligado"
+            self.bd_.armazenar_dados("ar_condicionado", "estado", {
+                "ar_condicionado": estado_armazenar,
+                "temperatura_pretendida": "inativo"
+            })
+            self.preparar_comando("ar_condicionado", comando)
+        elif temperatura_pretendida == "inativo":
+            # Armazena a temperatura pretendida sem ligar o ar condicionado
+            self.bd_.armazenar_dados("ar_condicionado", "estado", {
+                "ar_condicionado": "desligado",
+                "temperatura_pretendida": temperatura_pretendida
+            })
 
         log_dados = {
             "hora": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "instrucao": comando["ar_condicionado"],
+            "instrucao": comando.get("ar_condicionado", "definir temperatura"),
             "origem": origem,
             "Parametros Programação": self.bd_.recuperar_dados("ar_condicionado", "parametrizacao")
         }
         self.bd_.registrar_log("ar_condicionado", log_dados)
 
-        # Executar o comando
-        self.preparar_comando("ar_condicionado", comando)
 
     def enviar_parametrizacao(self, dispositivo):
         parametros = self.bd_.recuperar_parametros(dispositivo, "parametrizacao")

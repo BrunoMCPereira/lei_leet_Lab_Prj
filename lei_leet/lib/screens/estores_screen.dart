@@ -40,9 +40,11 @@ class _ShuttersScreenState extends State<ShuttersScreen> {
     developer.log('Dados iniciais carregados', name: 'ShuttersScreen');
   }
 
-  Future<void> alternarEstado() async {
-    if (widget.communicationHelper.deviceState.estadoEstores == 'Parado') {
+  Future<void> alternarEstado(String comando) async {
+    if (comando == 'subir') {
       widget.communicationHelper.subirEstores();
+    } else if (comando == 'descer') {
+      widget.communicationHelper.descerEstores();
     } else {
       widget.communicationHelper.pararEstores();
     }
@@ -127,6 +129,76 @@ class _ShuttersScreenState extends State<ShuttersScreen> {
   @override
   Widget build(BuildContext context) {
     final deviceState = widget.communicationHelper.deviceState;
+    double percentagemAbertura = deviceState.percentagemAbertura * 100;
+    String statusEstores = deviceState.estadoEstores;
+
+    String mostrarPercentagemOuEstado() {
+      if (statusEstores == 'A Subir') {
+        return 'A Subir';
+      } else if (statusEstores == 'A Descer') {
+        return 'A Descer';
+      } else {
+        return '${percentagemAbertura.toStringAsFixed(0)}%';
+      }
+    }
+
+    List<Widget> obterBotoesControle() {
+      if (statusEstores != 'Parado') {
+        return [
+          ElevatedButton(
+            onPressed: () => alternarEstado('parar'),
+            child: Text('Parar', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ];
+      } else if (percentagemAbertura >= 100) {
+        return [
+          ElevatedButton(
+            onPressed: () => alternarEstado('descer'),
+            child: Text('Descer', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ];
+      } else if (percentagemAbertura <= 0) {
+        return [
+          ElevatedButton(
+            onPressed: () => alternarEstado('subir'),
+            child: Text('Subir', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ];
+      } else {
+        return [
+          ElevatedButton(
+            onPressed: () => alternarEstado('subir'),
+            child: Text('Subir', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => alternarEstado('descer'),
+            child: Text('Descer', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ];
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -148,12 +220,22 @@ class _ShuttersScreenState extends State<ShuttersScreen> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue),
               ),
               SizedBox(height: 16),
+              Text(
+                'Percentagem de Abertura:',
+                style: TextStyle(fontSize: 18, color: Colors.blue),
+              ),
+              Text(
+                mostrarPercentagemOuEstado(),
+                style: TextStyle(fontSize: 18, color: Colors.blue),
+              ),
+              SizedBox(height: 16),
               ControlSection(
                 title: 'Estores',
-                statusText: 'Status: ${deviceState.estadoEstores}',
-                onControl: alternarEstado,
-                buttonColor: deviceState.estadoEstores == 'Parado' ? Colors.green : Colors.red,
-                buttonText: deviceState.estadoEstores == 'Parado' ? 'Subir' : 'Parar',
+                statusText: 'Status: ${statusEstores}',
+                onControl: () {},
+                buttonColor: Colors.transparent,
+                buttonText: '',
+                customButtons: obterBotoesControle(),
               ),
               SizedBox(height: 16),
               if (widget.communicationHelper.estoresParametrizacaoAtiva) ...[
@@ -308,6 +390,7 @@ class ControlSection extends StatelessWidget {
   final VoidCallback onControl;
   final Color buttonColor;
   final String buttonText;
+  final List<Widget> customButtons;
 
   const ControlSection({
     required this.title,
@@ -315,6 +398,7 @@ class ControlSection extends StatelessWidget {
     required this.onControl,
     required this.buttonColor,
     required this.buttonText,
+    required this.customButtons,
   });
 
   @override
@@ -326,7 +410,6 @@ class ControlSection extends StatelessWidget {
       ),
       child: Container(
         width: 200,
-        height: 160,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -346,13 +429,8 @@ class ControlSection extends StatelessWidget {
                 style: TextStyle(fontSize: 18),
               ),
               SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: onControl,
-                child: Text(buttonText, style: TextStyle(color: Colors.white, fontSize: 16)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
+              Column(
+                children: customButtons,
               ),
             ],
           ),

@@ -288,7 +288,8 @@ class CommunicationHelper {
     final message = {
       "instrucao": "Ordem",
       "parametros": {
-        "ar_condicionado": "ligar"
+        "ar_condicionado": "ligar",
+        "temperatura_pretendida": arCondicionadoTemperaturaDefinida,
       }
     };
     publish('app/fluxo', jsonEncode(message));
@@ -319,7 +320,7 @@ class CommunicationHelper {
   }
 
   Future<void> solicitarParametrizacao(String dispositivo) async {
-  // Simula o envio dos dados para o backend
+    // Simula o envio dos dados para o backend
     await Future.delayed(Duration(seconds: 1));
     final message = {
       "instrucao": "SolicitarParametrizacao",
@@ -421,16 +422,35 @@ class CommunicationHelper {
     }
   }
 
+  void definirValoresAtuais(String dispositivo, Map<String, dynamic> valoresAtuais) {
+    final message = {
+      "instrucao": "Ordem",
+      "parametros": {
+        dispositivo: valoresAtuais,
+      },
+    };
+    publish('app/fluxo', jsonEncode(message));
+  }
+
   void definirTemperatura(double temperatura) {
-    // Aqui você pode implementar a lógica para enviar a temperatura pretendida ao servidor
     final parametros = {
       "estado": "ativo",  // Ou "inativo" dependendo do contexto
       "temperatura": temperatura,
     };
     programarParametros("ar_condicionado", parametros);
-  }
 
-  
+    // Enviar mensagem para ligar a luz
+    ligarLuz();
+    // Enviar mensagem para desligar o ar condicionado com temperatura pretendida
+    final message = {
+      "instrucao": "Ordem",
+      "parametros": {
+        "ar_condicionado": "desligar",
+        "temperatura_pretendida": temperatura
+      }
+    };
+    publish('app/fluxo', jsonEncode(message));
+  }
 
   void _processarMensagemEstado(Map<String, dynamic> decodedMessage) {
     // Atualizar variáveis do provider com base na mensagem recebida no tópico de estado
