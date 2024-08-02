@@ -1,4 +1,4 @@
-# Projeto de Automação com Shelly e MQTT
+# Projeto de Automação Residêncial
 
 Este projeto tem como objetivo controlar dispositivos Shelly utilizando MQTT. A aplicação é composta por um script Python que se conecta ao broker MQTT para enviar comandos aos dispositivos Shelly e uma aplicação Flutter que serve como interface de usuário para controlar esses dispositivos remotamente.
 Estrutura do Projeto
